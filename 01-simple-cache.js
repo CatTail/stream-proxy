@@ -5,7 +5,6 @@ const util = require('util')
 const buffer = require('buffer')
 const stream = require('stream')
 
-const accepts = require('accepts')
 const debug = require('debug')('stream-proxy')
 
 const Transform = stream.Transform
@@ -51,17 +50,8 @@ function getCache (req) {
     return null
   }
 
-  const accept = accepts(req)
-  const urlCache = caches[req.url]
-  const types = Object.keys(urlCache)
-  const type = accept.type(types)
-  debug('accept', types, type)
-  if (!type) {
-    return null
-  }
-
   debug('hit cache')
-  const cache = urlCache[type]
+  const cache = caches[req.url]
   return cache
 }
 
@@ -69,11 +59,10 @@ function isCacheable (method, headers) {
   return method === 'GET'
 }
 
-function CacheStream (clientRequest, remoteResponse) {
-  const urlCache = caches[clientRequest.url] = caches[clientRequest.url] || {}
-  this.cache = urlCache[remoteResponse.headers['content-type']] = {
-    statusCode: remoteResponse.statusCode,
-    headers: remoteResponse.headers,
+function CacheStream (clientReq, remoteRes) {
+  this.cache = caches[clientReq.url] = {
+    statusCode: remoteRes.statusCode,
+    headers: remoteRes.headers,
     response: null
   }
   this.chunks = []
